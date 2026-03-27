@@ -57,7 +57,10 @@ services:
       mariadb:
         condition: service_healthy
     environment:
+      DB_TYPE: mariadb
+      DB_PORT: 3306
       DB_HOST: mariadb
+      DB_PORT: 3306
       DB_NAME: moodle
       DB_USER: moodle
       DB_PASS: ${MOODLE_DB_PASS}
@@ -186,7 +189,7 @@ services:
 
   # === PORTAINER ===
   portainer:
-    image: portainer/portainer-ce:lts-alpine
+    image: portainer/portainer-ce:latest
     container_name: edubox-portainer
     restart: unless-stopped
     volumes:
