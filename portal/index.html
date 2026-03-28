@@ -28,7 +28,7 @@
   }
   header {
     text-align: center;
-    margin-bottom: 32px;
+    margin-bottom: 24px;
   }
   .logo {
     width: 80px;
@@ -49,17 +49,19 @@
   }
   .lang-bar {
     display: flex;
-    gap: 12px;
-    margin-bottom: 32px;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 28px;
   }
   .lang-btn {
     background: var(--card);
     border: 1px solid #334155;
     color: var(--text);
-    padding: 6px 16px;
+    padding: 5px 14px;
     border-radius: 20px;
     cursor: pointer;
-    font-size: 0.9em;
+    font-size: 0.85em;
     transition: border-color 0.2s;
   }
   .lang-btn.active, .lang-btn:hover {
@@ -142,6 +144,9 @@
   <button class="lang-btn active" onclick="setLang('fr')">FR</button>
   <button class="lang-btn" onclick="setLang('en')">EN</button>
   <button class="lang-btn" onclick="setLang('es')">ES</button>
+  <button class="lang-btn" onclick="setLang('pt')">PT</button>
+  <button class="lang-btn" onclick="setLang('it')">IT</button>
+  <button class="lang-btn" onclick="setLang('de')">DE</button>
 </div>
 
 <div class="apps">
@@ -226,7 +231,40 @@ const i18n = {
     running: "En línea",
     stopped: "Sin conexión",
     checking: "Comprobando…",
-  }
+  },
+  pt: {
+    tagline: "Biblioteca educativa offline",
+    "desc-moodle": "Cursos online, exercícios, questionários",
+    "desc-kolibri": "Khan Academy, Wikipedia, vídeos educativos",
+    "name-koha": "Biblioteca",
+    "desc-koha": "Catálogo, empréstimos, devoluções",
+    footer: "Ofelia — Servidor educativo local",
+    running: "Online",
+    stopped: "Offline",
+    checking: "Verificando…",
+  },
+  it: {
+    tagline: "Biblioteca educativa offline",
+    "desc-moodle": "Corsi online, esercizi, quiz",
+    "desc-kolibri": "Khan Academy, Wikipedia, video educativi",
+    "name-koha": "Biblioteca",
+    "desc-koha": "Catalogo, prestiti, restituzioni",
+    footer: "Ofelia — Server educativo locale",
+    running: "Online",
+    stopped: "Offline",
+    checking: "Verifica…",
+  },
+  de: {
+    tagline: "Offline-Bildungsbibliothek",
+    "desc-moodle": "Online-Kurse, Übungen, Quiz",
+    "desc-kolibri": "Khan Academy, Wikipedia, Lernvideos",
+    "name-koha": "Bibliothek",
+    "desc-koha": "Katalog, Ausleihe, Rückgaben",
+    footer: "Ofelia — Lokaler Bildungsserver",
+    running: "Online",
+    stopped: "Offline",
+    checking: "Prüfung…",
+  },
 };
 
 let currentLang = 'fr';
@@ -240,15 +278,21 @@ function setLang(lang) {
     if (el && !['running','stopped','checking'].includes(id)) el.textContent = text;
   }
   document.querySelectorAll('.lang-btn').forEach(b => {
-    b.classList.toggle('active', b.textContent === lang.toUpperCase());
+    b.classList.toggle('active', b.dataset.lang === lang);
   });
+  localStorage.setItem('ofelia-lang', lang);
 }
 
-const SERVICE_MAP = {
-  moodle: 'moodle',
-  kolibri: 'kolibri',
-  koha: 'koha',
-};
+// Initialiser les data-lang sur les boutons
+document.querySelectorAll('.lang-btn').forEach(b => {
+  b.dataset.lang = b.textContent.toLowerCase();
+});
+
+// Restaurer la langue sauvegardée
+const saved = localStorage.getItem('ofelia-lang');
+if (saved && i18n[saved]) setLang(saved);
+
+const SERVICE_MAP = { moodle: 'moodle', kolibri: 'kolibri', koha: 'koha' };
 
 function updateStatus(data) {
   const t = i18n[currentLang];
@@ -268,7 +312,6 @@ function checkStatus() {
     const txt = document.getElementById('status-' + k);
     if (txt) txt.textContent = i18n[currentLang].checking;
   });
-
   fetch('/api/status')
     .then(r => r.json())
     .then(updateStatus)

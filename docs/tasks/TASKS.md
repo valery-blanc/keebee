@@ -34,7 +34,7 @@
 - [x] 2.8 `docker compose pull` — images officielles téléchargées
 
 ### Phase 3 — Portail et Nginx
-- [x] 3.1 Portail HTML créé (FR/EN/ES), rebranded Ofelia avec logo
+- [x] 3.1 Portail HTML créé (FR/EN/ES/PT/IT/DE), rebranded Ofelia avec logo, i18n + localStorage
 - [x] 3.2 Nginx reverse proxy configuré (Moodle sub_filter, Kolibri prefix, Koha CGI)
 - [x] 3.3 Portail captif fonctionnel — Android ouvre automatiquement http://192.168.50.1/
 

@@ -1,6 +1,6 @@
 # SPEC_EDUBOX.md — Serveur éducatif et bibliothèque hors-ligne sur Raspberry Pi 5
 
-> **Version** : 1.1 (FEAT-002 / FEAT-003 / FEAT-004)
+> **Version** : 1.2 (FEAT-002 / FEAT-003 / FEAT-004 / FEAT-005)
 > **Date** : 2026-03-28
 > **Auteur** : Val (spécification), Claude Code (implémentation)  
 > **Inspiration** : Beekee Box (beekee.ch), MoodleBox, Kolibri RPi
@@ -243,13 +243,20 @@ iptables -t nat -A PREROUTING -i wlan0 -p tcp --dport 443 -j DNAT --to-destinati
 
 Le reverse proxy Nginx sert une **page d'accueil HTML statique** responsive qui :
 
-1. Détecte les requêtes de captive portal des OS (Android `connectivitycheck.gstatic.com`, iOS `captive.apple.com`, Windows `www.msftconnecttest.com`) et renvoie un HTTP 302 vers `http://edubox.local/`
+1. Détecte les requêtes de captive portal Android (`/generate_204`, `/gen_204`) et renvoie HTTP 204 (évite le popup "pas d'internet")
 2. Affiche trois grosses tuiles cliquables :
-   - **Moodle** → `http://moodle.edubox.local/` (ou `/moodle/`)
-   - **Kolibri** → `http://kolibri.edubox.local/` (ou `/kolibri/`)
-   - **Bibliothèque (Koha OPAC)** → `http://biblio.edubox.local/` (ou `/biblio/`)
-3. Affiche le statut de chaque service (vert/rouge) via un petit JS qui ping les healthchecks
+   - **Moodle** → `/moodle/`
+   - **Kolibri** → `/kolibri/`
+   - **Bibliothèque (Koha OPAC)** → `/biblio/`
+3. Affiche le statut de chaque service (vert/rouge) via `/api/status`
 4. Fonctionne à 100% offline, pas de CDN externe, tout embarqué
+
+**Internationalisation (FEAT-005)** : le portail est disponible en 6 langues — FR, EN, ES, PT, IT, DE.
+Un sélecteur de langue (barre de boutons `flex-wrap`) permet de changer la langue à la volée.
+Le choix est persisté dans `localStorage` (clé `ofelia-lang`) et restauré au prochain chargement.
+Éléments traduits : tagline, descriptions des apps, nom Bibliothèque/Library/Bibliothek, statuts (En ligne / Offline…), footer.
+
+Moodle language packs installés : `es`, `pt`, `it`, `de` (FR = défaut, EN = langue de base Moodle).
 
 **Design** : responsive, gros boutons tactiles, icônes SVG inline, multilingue (FR/EN/ES sélectionnable).
 
@@ -326,7 +333,7 @@ moodle:
 
 Après le premier déploiement, un script `edubox-moodle-setup.sh` :
 
-1. Active les packs de langue **français**, **anglais**, **espagnol**
+1. Active les packs de langue **français**, **anglais**, **espagnol**, **portugais**, **italien**, **allemand**
 2. Importe des cours .mbz pré-packagés depuis `/opt/edubox/moodle-courses/` :
    - **Alphabétisation numérique** (Digital Literacy basics)
    - **Mathématiques fondamentales** (niveaux primaire/secondaire)
@@ -1460,7 +1467,7 @@ log "  Portainer: https://localhost:9443 (create admin on first access)"
 │   └── proxy_params              # Headers proxy communs
 │
 ├── portal/
-│   ├── index.html                # Page d'accueil responsive (FR/EN/ES)
+│   ├── index.html                # Page d'accueil responsive (FR/EN/ES/PT/IT/DE)
 │   ├── style.css                 # Styles inline-friendly
 │   ├── script.js                 # Status check + i18n
 │   └── assets/
