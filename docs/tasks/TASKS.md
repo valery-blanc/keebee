@@ -3,14 +3,14 @@
 ## In Progress
 
 ### Phase 5 — Import contenu
-- [ ] 5.1 Import channels Kolibri (Khan Academy, Wikipedia, etc.)
+- [ ] 5.1 Import channels Kolibri — en cours : KA English (~11Go/15Go), PhET ES, Sikana ES
 - [x] 5.2 Kolibri configuré (setup wizard complété, URL prefix /kolibri)
 - [x] 5.3 Koha configuré (web installer, bibliothèque EDUBOX, compte admin)
 - [ ] 5.4 Tester scanner USB (si branché)
 
 ### Phase 6 — Monitoring et finalisation
 - [x] 6.1 Healthcheck dashboard déployé (http://192.168.50.1/status/)
-- [ ] 6.2 Configurer Tailscale (`tailscale up --ssh --hostname=ofelia-001`)
+- [x] 6.2 Accès distant via ZeroTier (réseau f3797ba7a8e6a4b5, Pi IP 10.115.169.147)
 - [ ] 6.3 Configurer backups automatiques (systemd timer)
 - [x] 6.4 Service systemd `ofelia.service` créé et activé
 - [x] 6.5 Test reboot — tout redémarre automatiquement (vérifié)
@@ -46,6 +46,9 @@
 - [x] 4.5 Koha OPAC accessible (http://192.168.50.1/biblio/)
 - [x] 4.6 Koha Staff accessible (http://192.168.50.1/cgi-bin/koha/mainpage.pl)
 - [x] 4.7 SIP2 exposé port 6001
+
+## Notes techniques
+- **Docker DNS** : `/etc/docker/daemon.json` requis avec `{"dns":["8.8.8.8","1.1.1.1"]}` — sans ça, les containers ne résolvent pas les noms externes (Docker's embedded DNS sans serveurs configurés)
 
 ## Notes
 - OS Pi : Debian GNU/Linux 13 (trixie)

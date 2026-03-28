@@ -1,6 +1,6 @@
 # SPEC_EDUBOX.md — Serveur éducatif et bibliothèque hors-ligne sur Raspberry Pi 5
 
-> **Version** : 1.2 (FEAT-002 / FEAT-003 / FEAT-004 / FEAT-005)
+> **Version** : 1.3 (FEAT-002 / FEAT-003 / FEAT-004 / FEAT-005 / FEAT-006)
 > **Date** : 2026-03-28
 > **Auteur** : Val (spécification), Claude Code (implémentation)  
 > **Inspiration** : Beekee Box (beekee.ch), MoodleBox, Kolibri RPi
@@ -18,7 +18,7 @@ Déployer sur un Raspberry Pi 5 un serveur tout-en-un, fonctionnel **avec ou san
   - **Moodle** — plateforme LMS (cours pré-installés)
   - **Kolibri** — plateforme éducative hors-ligne (Khan Academy, Wikipedia, etc.)
   - **Koha** — système intégré de gestion de bibliothèque (SIGB) avec support scanner USB et RFID/EM
-- Offre un **monitoring à distance** quand le Pi a accès à internet (via Tailscale)
+- Offre un **accès distant** quand le Pi a accès à internet (via ZeroTier VPN)
 - **Résiste aux coupures d'électricité** intempestives (protection logicielle + recommandation UPS)
 
 ### 1.2 Contextes de déploiement cibles
@@ -845,33 +845,30 @@ healthcheck:
           memory: 48M
 ```
 
-### 9.2 Monitoring distant — Tailscale
+### 9.2 Accès distant — ZeroTier (FEAT-006)
 
-**Tailscale** installé sur l'hôte (pas Docker) car il nécessite un accès réseau complet.
+**ZeroTier** installé sur l'hôte. Crée un VPN mesh P2P — aucun port entrant à ouvrir sur le routeur local.
 
 ```bash
 # Installation
-curl -fsSL https://tailscale.com/install.sh | sh
-
-# Configuration (une seule fois, avec internet)
-tailscale up --ssh --hostname=edubox-001 --advertise-tags=tag:edubox
+curl -s https://install.zerotier.com | sudo bash
+sudo zerotier-cli join f3797ba7a8e6a4b5
+sudo systemctl enable zerotier-one
 ```
 
-**Accès distant quand internet disponible** :
+**Connexion SSH à distance** :
 
-| Service | URL Tailscale |
+```bash
+ssh -i ~/.ssh/id_ed25519_pi val@10.115.169.147
+```
+
+| Paramètre | Valeur |
 |---|---|
-| Dashboard status | `http://edubox-001:8090/` |
-| Portainer | `https://edubox-001:9443/` |
-| SSH | `ssh edubox-001` (via Tailscale SSH) |
-| Moodle admin | `http://edubox-001/moodle/` |
-| Koha staff | `http://edubox-001/biblio-admin/` |
+| Network ID | `f3797ba7a8e6a4b5` |
+| Pi ZeroTier IP | `10.115.169.147` |
+| Pi ZeroTier address | `2828b2b0e1` |
 
-**Sécurité Tailscale** :
-
-- ACL restrictives : seuls les comptes admin Tailscale accèdent aux EduBox
-- Tags : `tag:edubox` pour regrouper toutes les box
-- SSH via Tailscale (pas de port 22 ouvert sur internet)
+**Prérequis** : le Pi doit avoir internet (RJ45 ou WiFi maison). Le WiFi Ofelia (AP) seul ne suffit pas.
 
 ### 9.3 Portainer (gestion des containers)
 
