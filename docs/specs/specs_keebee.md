@@ -1,7 +1,7 @@
 # SPEC_EDUBOX.md — Serveur éducatif et bibliothèque hors-ligne sur Raspberry Pi 5
 
-> **Version** : 1.4 (FEAT-002 / FEAT-003 / FEAT-004 / FEAT-005 / FEAT-006 / FEAT-007)
-> **Date** : 2026-03-28
+> **Version** : 1.5 (FEAT-002 / FEAT-003 / FEAT-004 / FEAT-005 / FEAT-006 / FEAT-007 / BUG-005 / BUG-006 / BUG-007)
+> **Date** : 2026-03-29
 > **Auteur** : Val (spécification), Claude Code (implémentation)  
 > **Inspiration** : Beekee Box (beekee.ch), MoodleBox, Kolibri RPi
 
@@ -518,6 +518,17 @@ ENTRYPOINT ["/entrypoint.sh"]
 CMD ["supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
 ```
 
+**Points critiques de l'entrypoint** (`koha/entrypoint.sh`) :
+
+- `koha-create --use-db` est relancé si **l'un** des deux fichiers est absent :
+  `/etc/koha/sites/$INSTANCE/koha-conf.xml` **OU** `/etc/apache2/sites-available/$INSTANCE.conf`
+  → La config Apache n'est pas dans un volume Docker ; elle se perd à chaque recréation du container.
+  La condition double garantit la régénération sans réinitialiser la DB. (BUG-005)
+- `/var/log/koha/$INSTANCE/` est créé **inconditionnellement** au démarrage — supervisord refuse
+  de démarrer si ce répertoire est absent, même quand `koha-create` est skippé. (BUG-001)
+- MPM Apache : `mpm_itk` activé pour `koha-create`, puis basculé en `mpm_prefork` après.
+  `mpm_itk` initgroups échoue dans Docker, `mpm_prefork` est compatible.
+
 ### 7.3 docker-compose (extrait)
 
 ```yaml
@@ -713,14 +724,22 @@ server {
     location /assets/ { root /var/www/edubox-portal; expires 7d; }
     location = /api/status { proxy_pass http://healthcheck/api/status; }
 
-    # Moodle (sub_filter pour réécrire http://localhost → http://192.168.50.1/moodle)
-    location /moodle/ { proxy_pass http://moodle/; ... sub_filter ...; }
+    # Moodle — sub_filter réécrit http://localhost → http://$host/moodle (dynamique)
+    # $host = Host header de la requête entrante → fonctionne pour toutes IPs/noms d'hôte
+    # (BUG-006 : ancienne version avait l'IP codée en dur → cassé si accès depuis autre réseau)
+    location /moodle/ { proxy_pass http://moodle/; proxy_set_header Host localhost;
+        sub_filter 'http://localhost' 'http://$host/moodle'; sub_filter_once off; }
 
     # Kolibri
     location /kolibri/ { proxy_pass http://kolibri/kolibri/; proxy_buffering off; }
 
     # Koha OPAC (public)
     location /biblio/ { proxy_pass http://koha_opac/; }
+
+    # Koha OPAC CGI sans préfixe — liens absolus générés par Koha (ex: /cgi-bin/koha/opac-user.pl)
+    # DOIT être une location regex (priorité > prefix) et pointer vers koha_opac, pas koha_staff
+    # (BUG-007 : l'ancienne règle /cgi-bin/koha/ routait tout vers le staff → 404 après login)
+    location ~ ^/cgi-bin/koha/opac { proxy_pass http://koha_opac; }
 
     # Koha Staff (réseau local uniquement)
     location /biblio-admin/ { proxy_pass http://koha_staff/; allow 192.168.50.0/24; deny all; }
@@ -742,7 +761,9 @@ server {
 **Notes importantes** :
 - `server_name` inclut `libofelia` — fonctionne grâce au DNS captif `address=/#/192.168.50.1`
 - Kiwix utilise `--urlRootLocation=/wiki` → nginx proxifie vers `http://kiwix/wiki/` sans sub_filter
-- Ne pas utiliser sub_filter pour réécrire les URLs Kiwix — les JS internes contiennent des chemins absolus (voir BUG-003)
+- Ne pas utiliser sub_filter pour réécrire les URLs Kiwix — les JS internes contiennent des chemins absolus (BUG-003)
+- Moodle sub_filter doit utiliser `$host` (variable nginx dynamique) — ne jamais coder l'IP en dur (BUG-006)
+- Koha OPAC génère des liens absolus sans préfixe `/biblio/` (ex: `/cgi-bin/koha/opac-user.pl`) — utiliser une location regex `~ ^/cgi-bin/koha/opac` vers `koha_opac`, avant la règle préfixe `/cgi-bin/koha/` qui route vers le staff (BUG-007)
 
 ### 8.2 docker-compose (extrait Nginx)
 

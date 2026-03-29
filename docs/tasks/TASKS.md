@@ -19,10 +19,20 @@
 - [x] 6.5 Test reboot — tout redémarre automatiquement (vérifié)
 - [ ] 6.6 Test coupure électrique — débrancher/rebrancher → tout revient
 
+### Bugfixes récents
+- [x] BUG-001 Fix Koha log dir manquant (crash supervisord sur restart)
+- [x] BUG-002 Fix Kiwix upstream port 8080
+- [x] BUG-003 Fix Kiwix CSS/JS cassés — `--urlRootLocation=/wiki`
+- [x] BUG-004 Fix Kiwix viewer mobile — iframe 100dvh
+- [x] BUG-005 Fix Koha OPAC page Apache par défaut — entrypoint vérifie sites-available
+- [x] BUG-006 Fix Moodle cassé multi-réseau — sub_filter `$host` dynamique
+- [x] BUG-007 Fix Koha OPAC 404 après login — CGI opac-* routés vers staff au lieu d'OPAC (nginx)
+- [ ] 6.7 Vérifier contenu interactif Kolibri (PhET) avec ZIP_CONTENT_PORT=8081
+
 ## Done
 
 ### Phase 1 — Infrastructure
-- [x] 1.1 Connexion SSH au Pi (`ssh -i ~/.ssh/id_ed25519_pi val@192.168.0.149`)
+- [x] 1.1 Connexion SSH au Pi (`ssh -i ~/.ssh/id_ed25519_pi val@192.168.0.147`)
 - [x] 1.4 WiFi AP "Ofelia" configuré via NetworkManager (SSID=Ofelia, WPA2, 192.168.50.1)
 - [x] 1.5 DNS captif : dnsmasq redirige tout vers 192.168.50.1 (portail captif)
 
@@ -55,12 +65,15 @@
 - **Kiwix prefix** : toujours utiliser `--urlRootLocation=/<prefix>` — ne pas sub_filter les URLs Kiwix (BUG-003)
 - **Kiwix port** : image `ghcr.io/kiwix/kiwix-serve` écoute sur 8080, ENTRYPOINT ajoute déjà `--port=8080` (BUG-002)
 - **Koha log dir** : `/var/log/koha/$INSTANCE` doit être créé inconditionnellement dans l'entrypoint (BUG-001)
+- **Koha Apache site** : `sites-available/edubox.conf` n'est pas dans un volume Docker — koha/entrypoint.sh vérifie sa présence et relance koha-create si absent (BUG-005)
+- **Moodle sub_filter** : toujours utiliser `$host` (variable nginx), jamais une IP codée en dur (BUG-006)
 
 ## Notes
 - OS Pi : Debian GNU/Linux 13 (trixie)
 - IP AP : 192.168.50.1 (wlan0 en mode AP via NetworkManager)
 - IP admin (RJ45) : 192.168.0.147 (eth0, DHCP)
 - Accès URL principal : http://192.168.50.1/ ou http://ofelia (après désactivation DoH Firefox)
-- Moodle wwwroot=http://localhost — nginx sub_filter réécrit vers http://192.168.50.1/moodle
+- Moodle wwwroot=http://localhost — nginx sub_filter réécrit vers http://$host/moodle (dynamique)
 - Koha : mpm_itk pour koha-create, puis bascule mpm_prefork ; plack-wrapper umask 0
 - Kolibri : KOLIBRI_URL_PATH_PREFIX=/kolibri ; nginx proxy_pass http://kolibri/kolibri/
+- Kolibri interactive content (H5P) : ZIP_CONTENT_PORT=8081 dans options.ini ; port 8081 exposé dans docker-compose
