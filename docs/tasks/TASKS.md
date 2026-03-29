@@ -2,6 +2,20 @@
 
 ## In Progress
 
+### FEAT-008 — Nouvelles apps + refonte tuiles portail — DONE
+- [x] 8.1 Logos copiés dans portal/assets/
+- [x] 8.2 Portail mis à jour : Koha logo, 2 tuiles Kiwix (Wikipedia+Wikisource), tuiles PMB/SLiMS/Digistorm
+- [x] 8.3 Digistorm — Dockerfile + service docker-compose + nginx port 3000
+- [x] 8.4 PMB v8.1 — Dockerfile + service docker-compose + nginx /pmb/
+- [x] 8.5 SLiMS v9.7.2 — Dockerfile + service docker-compose + nginx /slims/
+- [x] 8.6 MariaDB : DB pmb + slims créées, .env mis à jour
+- [x] 8.7 Build images Pi (3 images construites avec succès)
+- [x] 8.8 docker compose up — redis, digistorm, pmb, slims démarrés
+- [x] 8.10 Bouton "← Portail" injecté via sub_filter nginx (Moodle, Kolibri, Koha, PMB, SLiMS, Digistorm)
+- [x] 8.11 Page identifiants /credentials.html + tuile portail
+- [x] 8.9 PMB et SLiMS opérationnels — schémas importés, services up (200/302)
+
+
 ### Phase 5 — Import contenu
 - [ ] 5.1 Import channels Kolibri — en cours : KA English (~11Go/15Go), PhET ES, Sikana ES
 - [x] 5.2 Kolibri configuré (setup wizard complété, URL prefix /kolibri)

@@ -98,6 +98,12 @@
     width: 64px;
     height: 64px;
   }
+  .app-icon {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    border-radius: 8px;
+  }
   .app-name {
     font-size: 1.3em;
     font-weight: 700;
@@ -181,27 +187,78 @@
 
   <!-- Koha -->
   <a class="app-card" href="/biblio/" id="card-koha">
-    <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-      <rect width="64" height="64" rx="12" fill="#2d6a4f"/>
-      <text x="32" y="44" text-anchor="middle" font-size="32" fill="white">📖</text>
-    </svg>
-    <div class="app-name" id="name-koha">Bibliothèque</div>
-    <div class="app-desc" id="desc-koha">Catalogue, prêts, retours de livres</div>
+    <img class="app-icon" src="/assets/KOHA_logo.jpg" alt="Koha">
+    <div class="app-name">Koha</div>
+    <div class="app-desc" id="desc-koha">Gestion de bibliothèque</div>
     <div class="app-status">
       <span class="dot" id="dot-koha"></span>
       <span id="status-koha">…</span>
     </div>
   </a>
 
+  <!-- PMB -->
+  <a class="app-card" href="/pmb/" id="card-pmb">
+    <img class="app-icon" src="/assets/PMB_logo.png" alt="PMB">
+    <div class="app-name">PMB</div>
+    <div class="app-desc" id="desc-pmb">Gestion de bibliothèque</div>
+    <div class="app-status">
+      <span class="dot" id="dot-pmb"></span>
+      <span id="status-pmb">…</span>
+    </div>
+  </a>
+
+  <!-- SLiMS -->
+  <a class="app-card" href="/slims/" id="card-slims">
+    <img class="app-icon" src="/assets/SLIMS_logo.png" alt="SLiMS">
+    <div class="app-name">SLiMS</div>
+    <div class="app-desc" id="desc-slims">Gestion de bibliothèque</div>
+    <div class="app-status">
+      <span class="dot" id="dot-slims"></span>
+      <span id="status-slims">…</span>
+    </div>
+  </a>
+
+  <!-- Digistorm — port 3000 (construit dynamiquement via JS) -->
+  <a class="app-card" href="#" id="card-digistorm">
+    <img class="app-icon" src="/assets/DIGISTORM_logo.png" alt="Digistorm">
+    <div class="app-name">Digistorm</div>
+    <div class="app-desc" id="desc-digistorm">Créer et animer des sondages, des remue-méninges et des quiz</div>
+    <div class="app-status">
+      <span class="dot" id="dot-digistorm"></span>
+      <span id="status-digistorm">…</span>
+    </div>
+  </a>
+
   <!-- Wikipedia ES (Kiwix) -->
-  <a class="app-card" href="/wiki/" id="card-wiki">
-    <img src="/assets/wikipedia-es.png" alt="Wikipedia" style="width:64px;height:64px;object-fit:contain;border-radius:8px;">
-    <div class="app-name">Wikipedia</div>
-    <div class="app-desc" id="desc-wiki">La enciclopedia libre en español</div>
+  <a class="app-card" href="/wiki/viewer#wikipedia_es/Wikipedia%3AOffline" id="card-wikipedia">
+    <img class="app-icon" src="/assets/wikipedia-es-logo.png" alt="Wikipedia">
+    <div class="app-name" id="name-wikipedia">Wikipedia Offline</div>
+    <div class="app-desc" id="desc-wikipedia">La enciclopedia libre en español</div>
     <div class="app-status">
       <span class="dot" id="dot-wiki"></span>
       <span id="status-wiki">…</span>
     </div>
+  </a>
+
+  <!-- Wikisource ES (Kiwix) -->
+  <a class="app-card" href="/wiki/viewer#wikisource_es/Portada" id="card-wikisource">
+    <img class="app-icon" src="/assets/wikisource-es-logo.png" alt="Wikisource">
+    <div class="app-name" id="name-wikisource">Wikisource Offline</div>
+    <div class="app-desc" id="desc-wikisource">Bibliothèque libre et collaborative</div>
+    <div class="app-status">
+      <span class="dot" id="dot-wiki"></span>
+      <span id="status-wikisource">…</span>
+    </div>
+  </a>
+
+  <!-- Identifiants -->
+  <a class="app-card" href="/credentials.html" style="border-color:#334155;">
+    <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+      <rect width="64" height="64" rx="12" fill="#334155"/>
+      <text x="32" y="44" text-anchor="middle" font-size="32" fill="#94a3b8">🔑</text>
+    </svg>
+    <div class="app-name" style="color:#94a3b8">Identifiants</div>
+    <div class="app-desc">Logins et mots de passe de toutes les applications</div>
   </a>
 
 </div>
@@ -214,9 +271,14 @@ const i18n = {
     tagline: "Bibliothèque éducative hors-ligne",
     "desc-moodle": "Cours en ligne, exercices, quiz",
     "desc-kolibri": "Khan Academy, vidéos éducatives",
-    "name-koha": "Bibliothèque",
-    "desc-koha": "Catalogue, prêts, retours de livres",
-    "desc-wiki": "L'encyclopédie libre en espagnol",
+    "desc-koha": "Gestion de bibliothèque",
+    "desc-pmb": "Gestion de bibliothèque",
+    "desc-slims": "Gestion de bibliothèque",
+    "desc-digistorm": "Créer et animer des sondages, des remue-méninges et des quiz",
+    "name-wikipedia": "Wikipedia Offline",
+    "desc-wikipedia": "L'encyclopédie libre en espagnol",
+    "name-wikisource": "Wikisource Offline",
+    "desc-wikisource": "Bibliothèque libre et collaborative",
     footer: "Ofelia — Serveur éducatif local",
     running: "En ligne",
     stopped: "Hors ligne",
@@ -226,9 +288,14 @@ const i18n = {
     tagline: "Offline educational library",
     "desc-moodle": "Online courses, exercises, quizzes",
     "desc-kolibri": "Khan Academy, educational videos",
-    "name-koha": "Library",
-    "desc-koha": "Catalog, checkouts, book returns",
-    "desc-wiki": "The free encyclopedia in Spanish",
+    "desc-koha": "Library management",
+    "desc-pmb": "Library management",
+    "desc-slims": "Library management",
+    "desc-digistorm": "Create and run polls, brainstorms and quizzes",
+    "name-wikipedia": "Wikipedia Offline",
+    "desc-wikipedia": "The free encyclopedia in Spanish",
+    "name-wikisource": "Wikisource Offline",
+    "desc-wikisource": "Free collaborative library",
     footer: "Ofelia — Local educational server",
     running: "Online",
     stopped: "Offline",
@@ -238,9 +305,14 @@ const i18n = {
     tagline: "Biblioteca educativa sin conexión",
     "desc-moodle": "Cursos en línea, ejercicios, cuestionarios",
     "desc-kolibri": "Khan Academy, videos educativos",
-    "name-koha": "Biblioteca",
-    "desc-koha": "Catálogo, préstamos, devoluciones",
-    "desc-wiki": "La enciclopedia libre en español",
+    "desc-koha": "Gestión de biblioteca",
+    "desc-pmb": "Gestión de biblioteca",
+    "desc-slims": "Gestión de biblioteca",
+    "desc-digistorm": "Crear y animar encuestas, lluvias de ideas y cuestionarios",
+    "name-wikipedia": "Wikipedia Sin Conexión",
+    "desc-wikipedia": "La enciclopedia libre en español",
+    "name-wikisource": "Wikisource Sin Conexión",
+    "desc-wikisource": "Biblioteca libre y colaborativa",
     footer: "Ofelia — Servidor educativo local",
     running: "En línea",
     stopped: "Sin conexión",
@@ -250,9 +322,14 @@ const i18n = {
     tagline: "Biblioteca educativa offline",
     "desc-moodle": "Cursos online, exercícios, questionários",
     "desc-kolibri": "Khan Academy, vídeos educativos",
-    "name-koha": "Biblioteca",
-    "desc-koha": "Catálogo, empréstimos, devoluções",
-    "desc-wiki": "A enciclopédia livre em espanhol",
+    "desc-koha": "Gestão de biblioteca",
+    "desc-pmb": "Gestão de biblioteca",
+    "desc-slims": "Gestão de biblioteca",
+    "desc-digistorm": "Criar e animar sondagens, brainstorms e questionários",
+    "name-wikipedia": "Wikipedia Offline",
+    "desc-wikipedia": "A enciclopédia livre em espanhol",
+    "name-wikisource": "Wikisource Offline",
+    "desc-wikisource": "Biblioteca livre e colaborativa",
     footer: "Ofelia — Servidor educativo local",
     running: "Online",
     stopped: "Offline",
@@ -262,9 +339,14 @@ const i18n = {
     tagline: "Biblioteca educativa offline",
     "desc-moodle": "Corsi online, esercizi, quiz",
     "desc-kolibri": "Khan Academy, video educativi",
-    "name-koha": "Biblioteca",
-    "desc-koha": "Catalogo, prestiti, restituzioni",
-    "desc-wiki": "L'enciclopedia libera in spagnolo",
+    "desc-koha": "Gestione biblioteca",
+    "desc-pmb": "Gestione biblioteca",
+    "desc-slims": "Gestione biblioteca",
+    "desc-digistorm": "Creare e animare sondaggi, brainstorm e quiz",
+    "name-wikipedia": "Wikipedia Offline",
+    "desc-wikipedia": "L'enciclopedia libera in spagnolo",
+    "name-wikisource": "Wikisource Offline",
+    "desc-wikisource": "Biblioteca libera e collaborativa",
     footer: "Ofelia — Server educativo locale",
     running: "Online",
     stopped: "Offline",
@@ -274,9 +356,14 @@ const i18n = {
     tagline: "Offline-Bildungsbibliothek",
     "desc-moodle": "Online-Kurse, Übungen, Quiz",
     "desc-kolibri": "Khan Academy, Lernvideos",
-    "name-koha": "Bibliothek",
-    "desc-koha": "Katalog, Ausleihe, Rückgaben",
-    "desc-wiki": "Die freie Enzyklopädie auf Spanisch",
+    "desc-koha": "Bibliotheksverwaltung",
+    "desc-pmb": "Bibliotheksverwaltung",
+    "desc-slims": "Bibliotheksverwaltung",
+    "desc-digistorm": "Umfragen, Brainstorms und Quiz erstellen",
+    "name-wikipedia": "Wikipedia Offline",
+    "desc-wikipedia": "Die freie Enzyklopädie auf Spanisch",
+    "name-wikisource": "Wikisource Offline",
+    "desc-wikisource": "Freie kollaborative Bibliothek",
     footer: "Ofelia — Lokaler Bildungsserver",
     running: "Online",
     stopped: "Offline",
@@ -309,7 +396,7 @@ document.querySelectorAll('.lang-btn').forEach(b => {
 const saved = localStorage.getItem('ofelia-lang');
 if (saved && i18n[saved]) setLang(saved);
 
-const SERVICE_MAP = { moodle: 'moodle', kolibri: 'kolibri', koha: 'koha', kiwix: 'wiki' };
+const SERVICE_MAP = { moodle: 'moodle', kolibri: 'kolibri', koha: 'koha', kiwix: 'wiki', pmb: 'pmb', slims: 'slims', digistorm: 'digistorm' };
 
 function updateStatus(data) {
   const t = i18n[currentLang];
@@ -325,7 +412,7 @@ function updateStatus(data) {
 }
 
 function checkStatus() {
-  ['moodle','kolibri','koha','wiki'].forEach(k => {
+  ['moodle','kolibri','koha','pmb','slims','digistorm','wiki','wikisource'].forEach(k => {
     const txt = document.getElementById('status-' + k);
     if (txt) txt.textContent = i18n[currentLang].checking;
   });
@@ -333,7 +420,7 @@ function checkStatus() {
     .then(r => r.json())
     .then(updateStatus)
     .catch(() => {
-      ['moodle','kolibri','koha','wiki'].forEach(k => {
+      ['moodle','kolibri','koha','pmb','slims','digistorm','wiki','wikisource'].forEach(k => {
         const dot = document.getElementById('dot-' + k);
         const txt = document.getElementById('status-' + k);
         if (dot) dot.className = 'dot fail';
@@ -341,6 +428,9 @@ function checkStatus() {
       });
     });
 }
+
+// Digistorm: port 3000, même hostname que le portail
+document.getElementById('card-digistorm').href = `http://${window.location.hostname}:3000/`;
 
 checkStatus();
 setInterval(checkStatus, 30000);

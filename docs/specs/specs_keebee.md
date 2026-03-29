@@ -1,6 +1,6 @@
 # SPEC_EDUBOX.md — Serveur éducatif et bibliothèque hors-ligne sur Raspberry Pi 5
 
-> **Version** : 1.5 (FEAT-002 / FEAT-003 / FEAT-004 / FEAT-005 / FEAT-006 / FEAT-007 / BUG-005 / BUG-006 / BUG-007)
+> **Version** : 1.6 (FEAT-002 / FEAT-003 / FEAT-004 / FEAT-005 / FEAT-006 / FEAT-007 / FEAT-008 / BUG-005 / BUG-006 / BUG-007)
 > **Date** : 2026-03-29
 > **Auteur** : Val (spécification), Claude Code (implémentation)  
 > **Inspiration** : Beekee Box (beekee.ch), MoodleBox, Kolibri RPi
@@ -14,11 +14,14 @@
 Déployer sur un Raspberry Pi 5 un serveur tout-en-un, fonctionnel **avec ou sans internet**, qui :
 
 - Crée un réseau WiFi local (hotspot) auquel des tablettes et smartphones se connectent
-- Sert quatre applications via un portail captif :
+- Sert plusieurs applications via un portail captif :
   - **Moodle** — plateforme LMS (cours pré-installés)
   - **Kolibri** — plateforme éducative hors-ligne (Khan Academy, vidéos éducatives)
   - **Koha** — système intégré de gestion de bibliothèque (SIGB) avec support scanner USB et RFID/EM
   - **Wikipedia ES + Wikisource ES** (via Kiwix) — encyclopédie et œuvres libres hors-ligne
+  - **PMB v8.1** — logiciel de gestion de bibliothèque alternatif (SIGB)
+  - **SLiMS v9.7.2** — logiciel de gestion de bibliothèque open source
+  - **Digistorm** — outil collaboratif (Node.js/Vue3, port 3000)
 - Offre un **accès distant** quand le Pi a accès à internet (via ZeroTier VPN)
 - **Résiste aux coupures d'électricité** intempestives (protection logicielle + recommandation UPS)
 
@@ -753,8 +756,42 @@ server {
     }
     location /wiki/ { proxy_pass http://kiwix/wiki/; }
 
+    # PMB — proxy_pass sans chemin (full URI passée telle quelle)
+    # resolver 127.0.0.11 = DNS Docker interne (évite "host not found" si container absent au démarrage)
+    location /pmb/ {
+        resolver 127.0.0.11 valid=10s;
+        set $pmb http://edubox-pmb;
+        proxy_pass $pmb;
+        proxy_set_header Accept-Encoding "";
+        sub_filter '</body>' $back_btn; sub_filter_once on;
+    }
+
+    # SLiMS — idem
+    location /slims/ {
+        resolver 127.0.0.11 valid=10s;
+        set $slims http://edubox-slims;
+        proxy_pass $slims;
+        proxy_set_header Accept-Encoding "";
+        sub_filter '</body>' $back_btn; sub_filter_once on;
+    }
+
     # Dashboard monitoring
     location /status/ { proxy_pass http://healthcheck/; }
+}
+
+# Digistorm — port 3000 dédié (pas de sous-chemin possible avec Vike SSR)
+server {
+    listen 3000;
+    server_name _;
+    location / {
+        resolver 127.0.0.11 valid=10s;
+        set $digistorm_upstream http://edubox-digistorm:3000;
+        proxy_pass $digistorm_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        sub_filter '</body>' $back_btn; sub_filter_once on;
+    }
 }
 ```
 
@@ -764,6 +801,8 @@ server {
 - Ne pas utiliser sub_filter pour réécrire les URLs Kiwix — les JS internes contiennent des chemins absolus (BUG-003)
 - Moodle sub_filter doit utiliser `$host` (variable nginx dynamique) — ne jamais coder l'IP en dur (BUG-006)
 - Koha OPAC génère des liens absolus sans préfixe `/biblio/` (ex: `/cgi-bin/koha/opac-user.pl`) — utiliser une location regex `~ ^/cgi-bin/koha/opac` vers `koha_opac`, avant la règle préfixe `/cgi-bin/koha/` qui route vers le staff (BUG-007)
+- PMB et SLiMS : utiliser `resolver 127.0.0.11 valid=10s; set $var http://hostname; proxy_pass $var;` (sans chemin) — avec une variable, nginx ne strip pas le préfixe de l'URI, elle est transmise intacte à Apache
+- Bouton `← Portail` : injecté via `sub_filter '</body>' $back_btn` dans toutes les apps ; nécessite `proxy_set_header Accept-Encoding ""` pour désactiver gzip
 
 ### 8.2 docker-compose (extrait Nginx)
 

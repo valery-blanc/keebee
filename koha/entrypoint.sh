@@ -68,7 +68,8 @@ mkdir -p \
     "/tmp/koha-$INSTANCE"
 
 # Create Koha instance if not already configured (volume-persisted check)
-if [ ! -f "/etc/koha/sites/$INSTANCE/koha-conf.xml" ]; then
+# Also re-run if Apache site config is missing (not persisted — lost on container recreation)
+if [ ! -f "/etc/koha/sites/$INSTANCE/koha-conf.xml" ] || [ ! -f "/etc/apache2/sites-available/$INSTANCE.conf" ]; then
     echo "[EduBox Koha] Running koha-create --use-db for instance: $INSTANCE"
 
     # passwdfile format: instancename:username:password:dbname:dbhost

@@ -35,6 +35,19 @@ services:
       --character-set-server=utf8mb4
       --collation-server=utf8mb4_unicode_ci
 
+  # === REDIS (pour Digistorm) ===
+  redis:
+    image: redis:7-alpine
+    container_name: edubox-redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASS} --maxmemory 32mb --maxmemory-policy allkeys-lru
+    networks:
+      - edubox-net
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+
   # === MEMCACHED (pour Koha) ===
   memcached:
     image: memcached:1.6-alpine
@@ -97,6 +110,8 @@ services:
       KOLIBRI_URL_PATH_PREFIX: /kolibri
     volumes:
       - kolibri_data:/kolibri_data
+    ports:
+      - "8081:8081"
     networks:
       - edubox-net
     deploy:
@@ -151,6 +166,85 @@ services:
       retries: 3
       start_period: 180s
 
+  # === DIGISTORM (sondages / remue-méninges / quiz) ===
+  digistorm:
+    build:
+      context: ./digistorm
+      dockerfile: Dockerfile
+    container_name: edubox-digistorm
+    restart: unless-stopped
+    depends_on:
+      - redis
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DOMAIN: "http://ofelia:3000"
+      REVERSE_PROXY: "0"
+      DB_HOST: redis
+      DB_PORT: "6379"
+      DB_PWD: ${REDIS_PASS}
+      SESSION_KEY: ${DIGISTORM_SESSION_KEY}
+      SESSION_DURATION: "86400000"
+      VITE_STORAGE: fs
+      VITE_UPLOAD_LIMIT: "5"
+    volumes:
+      - digistorm_data:/app/static/fichiers
+    networks:
+      - edubox-net
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # === PMB (gestion de bibliothèque) ===
+  pmb:
+    build:
+      context: ./pmb
+      dockerfile: Dockerfile
+    container_name: edubox-pmb
+    restart: unless-stopped
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    environment:
+      PMB_DB_HOST: mariadb
+      PMB_DB_NAME: pmb
+      PMB_DB_USER: pmb
+      PMB_DB_PASS: ${PMB_DB_PASS}
+    volumes:
+      - pmb_data:/var/www/html/pmb/temp
+    networks:
+      - edubox-net
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # === SLiMS (gestion de bibliothèque) ===
+  slims:
+    build:
+      context: ./slims
+      dockerfile: Dockerfile
+    container_name: edubox-slims
+    restart: unless-stopped
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    environment:
+      SLIMS_DB_HOST: mariadb
+      SLIMS_DB_NAME: slims
+      SLIMS_DB_USER: slims
+      SLIMS_DB_PASS: ${SLIMS_DB_PASS}
+    volumes:
+      - slims_data:/var/www/html/slims/files
+      - slims_config:/var/www/html/slims/config
+    networks:
+      - edubox-net
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
   # === WIKIPEDIA (Kiwix) ===
   kiwix:
     image: ghcr.io/kiwix/kiwix-serve:latest
@@ -182,8 +276,12 @@ services:
       - kolibri
       - koha
       - kiwix
+      - digistorm
+      - pmb
+      - slims
     ports:
       - "80:80"
+      - "3000:3000"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ./nginx/proxy_params:/etc/nginx/proxy_params:ro
@@ -244,4 +342,8 @@ volumes:
   kolibri_data:
   koha_data:
   koha_config:
+  digistorm_data:
+  pmb_data:
+  slims_data:
+  slims_config:
   portainer_data:
