@@ -11,7 +11,7 @@ services:
       MARIADB_USER: moodle
       MARIADB_PASSWORD: ${MOODLE_DB_PASS}
     volumes:
-      - mariadb_data:/var/lib/mysql
+      - /opt/edubox/data/mariadb:/var/lib/mysql
       - ./mariadb/init:/docker-entrypoint-initdb.d:ro
       - ./mariadb/conf.d:/etc/mysql/conf.d:ro
     networks:
@@ -84,8 +84,8 @@ services:
       MOODLE_PASSWORD: ${MOODLE_ADMIN_PASS}
       MOODLE_SITE_NAME: "Ofelia"
     volumes:
-      - moodle_data:/var/www/moodledata
-      - moodle_html:/var/www/html
+      - /opt/edubox/data/moodle/data:/var/www/moodledata
+      - /opt/edubox/data/moodle/html:/var/www/html
       - ./moodle/99-fix-wwwroot.sh:/docker-entrypoint-init.d/99-fix-wwwroot.sh:ro
     networks:
       - edubox-net
@@ -112,7 +112,7 @@ services:
       KOLIBRI_LISTEN_PORT: "8080"
       KOLIBRI_URL_PATH_PREFIX: /kolibri
     volumes:
-      - kolibri_data:/kolibri_data
+      - /opt/edubox/data/kolibri:/kolibri_data
     ports:
       - "8081:8081"
     networks:
@@ -149,8 +149,8 @@ services:
       KOHA_DB_ROOT_PASS: ${MARIADB_ROOT_PASS}
       MEMCACHED_SERVER: memcached:11211
     volumes:
-      - koha_data:/var/lib/koha
-      - koha_config:/etc/koha
+      - /opt/edubox/data/koha/data:/var/lib/koha
+      - /opt/edubox/data/koha/config:/etc/koha
     ports:
       - "6001:6001"
     cap_add:
@@ -191,7 +191,7 @@ services:
       VITE_STORAGE: fs
       VITE_UPLOAD_LIMIT: "5"
     volumes:
-      - digistorm_data:/app/static/fichiers
+      - /opt/edubox/data/digistorm:/app/static/fichiers
     networks:
       - edubox-net
     deploy:
@@ -215,8 +215,8 @@ services:
       PMB_DB_USER: pmb
       PMB_DB_PASS: ${PMB_DB_PASS}
     volumes:
-      - pmb_data:/var/www/html/pmb/temp
-      - pmb_config:/var/www/html/pmb/includes
+      - /opt/edubox/data/pmb/data:/var/www/html/pmb/temp
+      - /opt/edubox/data/pmb/config:/var/www/html/pmb/includes
     networks:
       - edubox-net
     deploy:
@@ -240,8 +240,8 @@ services:
       SLIMS_DB_USER: slims
       SLIMS_DB_PASS: ${SLIMS_DB_PASS}
     volumes:
-      - slims_data:/var/www/html/slims/files
-      - slims_config:/var/www/html/slims/config
+      - /opt/edubox/data/slims/data:/var/www/html/slims/files
+      - /opt/edubox/data/slims/config:/var/www/html/slims/config
     networks:
       - edubox-net
     deploy:
@@ -322,7 +322,7 @@ services:
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - portainer_data:/data
+      - /opt/edubox/data/portainer:/data
     ports:
       - "127.0.0.1:9443:9443"
     networks:
@@ -339,16 +339,3 @@ networks:
       config:
         - subnet: 172.20.0.0/16
 
-volumes:
-  mariadb_data:
-  moodle_data:
-  moodle_html:
-  kolibri_data:
-  koha_data:
-  koha_config:
-  digistorm_data:
-  pmb_data:
-  pmb_config:
-  slims_data:
-  slims_config:
-  portainer_data:

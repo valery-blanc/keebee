@@ -1,7 +1,7 @@
 # SPEC_EDUBOX.md — Serveur éducatif et bibliothèque hors-ligne sur Raspberry Pi 5
 
-> **Version** : 1.8 (FEAT-002 / FEAT-003 / FEAT-004 / FEAT-005 / FEAT-006 / FEAT-007 / FEAT-008 / FEAT-009 / BUG-005 / BUG-006 / BUG-007 / BUG-008 / BUG-009)
-> **Date** : 2026-03-30
+> **Version** : 2.0 (FEAT-002 / FEAT-003 / FEAT-004 / FEAT-005 / FEAT-006 / FEAT-007 / FEAT-008 / FEAT-009 / FEAT-010 / FEAT-011 / BUG-005 / BUG-006 / BUG-007 / BUG-008 / BUG-009)
+> **Date** : 2026-04-01
 > **Auteur** : Val (spécification), Claude Code (implémentation)  
 > **Inspiration** : Beekee Box (beekee.ch), MoodleBox, Kolibri RPi
 
@@ -78,64 +78,73 @@ L'objectif de l'UPS est de donner au système le temps d'effectuer un **shutdown
 ### 3.1 Diagramme d'architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                     RASPBERRY PI 5 (4 Go)                       │
-│                                                                 │
-│  ┌─────────┐    ┌──────────────────────────────────────────┐   │
-│  │ eth0    │────│  Internet (quand disponible)              │   │
-│  │ (RJ45)  │    │  → apt, Docker pull, Tailscale, sync     │   │
-│  └─────────┘    └──────────────────────────────────────────┘   │
-│                                                                 │
-│  ┌─────────┐    ┌──────────────────────────────────────────┐   │
-│  │ wlan0   │────│  Hotspot WiFi "Ofelia"                   │   │
-│  │ (WiFi)  │    │  → DHCP: 192.168.50.10-192.168.50.200   │   │
-│  │ AP mode │    │  → DNS: toutes requêtes → 192.168.50.1  │   │
-│  └─────────┘    └──────────────────────────────────────────┘   │
-│                                                                 │
-│  ┌──────────────────── HOST (Raspberry Pi OS Lite 64-bit) ──┐  │
-│  │                                                           │  │
-│  │  systemd services :                                       │  │
-│  │  ├── NetworkManager  (gère hostapd + dnsmasq via nmcli AP) │  │
-│  │  ├── tailscaled     (VPN mesh pour monitoring distant)    │  │
-│  │  └── docker         (moteur de conteneurs)                │  │
-│  │                                                           │  │
-│  │  ┌────────────── Docker Compose Stack ─────────────────┐ │  │
-│  │  │                                                     │ │  │
-│  │  │  nginx-proxy    :80/:443  (reverse proxy + portail) │ │  │
-│  │  │  ┌─────────────────────────────────────────────┐    │ │  │
-│  │  │  │  mariadb      :3306  (BD partagée)          │    │ │  │
-│  │  │  └─────────────────────────────────────────────┘    │ │  │
-│  │  │  ┌──────────┐ ┌──────────┐ ┌──────────────────┐    │ │  │
-│  │  │  │ moodle   │ │ kolibri  │ │ koha             │    │ │  │
-│  │  │  │ :8081    │ │ :8082    │ │ :8083 (staff)    │    │ │  │
-│  │  │  │          │ │          │ │ :8084 (OPAC)     │    │ │  │
-│  │  │  │          │ │          │ │ :6001 (SIP2)     │    │ │  │
-│  │  │  └──────────┘ └──────────┘ └──────────────────┘    │ │  │
-│  │  │  ┌──────────────────────────────────────────────┐   │ │  │
-│  │  │  │  kiwix  :8080  (Wikipedia ES + Wikisource ES)│   │ │  │
-│  │  │  └──────────────────────────────────────────────┘   │ │  │
-│  │  │  ┌──────────────────────────────────────────────┐   │ │  │
-│  │  │  │  portainer  :9443  (gestion containers)      │   │ │  │
-│  │  │  │  healthcheck :8090 (dashboard status custom)  │   │ │  │
-│  │  │  └──────────────────────────────────────────────┘   │ │  │
-│  │  └─────────────────────────────────────────────────────┘ │  │
-│  └───────────────────────────────────────────────────────────┘  │
-│                                                                 │
-│  USB :  ┌──────────┐  ┌──────────────┐                         │
-│         │ Scanner   │  │ Lecteur RFID │  (optionnels)           │
-│         │ barcode   │  │              │                         │
-│         └──────────┘  └──────────────┘                         │
-└─────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│                      RASPBERRY PI 5 (4 Go RAM, SD 512 Go)            │
+│                                                                      │
+│  ┌─────────┐   ┌─────────────────────────────────────────────────┐  │
+│  │ eth0    │───│ Internet (quand disponible)                      │  │
+│  │ (RJ45)  │   │ → apt, Docker pull, ZeroTier VPN, sync          │  │
+│  └─────────┘   └─────────────────────────────────────────────────┘  │
+│                                                                      │
+│  ┌─────────┐   ┌─────────────────────────────────────────────────┐  │
+│  │ wlan0   │───│ Hotspot WiFi "Ofelia"                            │  │
+│  │ AP mode │   │ DHCP: 192.168.50.10-200 / DNS: 192.168.50.1     │  │
+│  └─────────┘   └─────────────────────────────────────────────────┘  │
+│                                                                      │
+│  ┌────────────────── HOST (Raspberry Pi OS Lite 64-bit) ──────────┐ │
+│  │  systemd: NetworkManager · zerotier-one · docker               │ │
+│  │                                                                 │ │
+│  │  ┌──────────────────── Docker Compose Stack ─────────────────┐ │ │
+│  │  │                                                            │ │ │
+│  │  │  ┌─────────────────────────────────────────────────────┐  │ │ │
+│  │  │  │  nginx-proxy :80  (reverse proxy + portail captif)  │  │ │ │
+│  │  │  │  Injecte bouton ⌂ (top-center) dans toutes les apps │  │ │ │
+│  │  │  └──────────────────────┬──────────────────────────────┘  │ │ │
+│  │  │                         │ proxy_pass                       │ │ │
+│  │  │  ┌──────────┐ ┌────────┐│┌──────┐ ┌──────┐ ┌──────────┐ │ │ │
+│  │  │  │ moodle   │ │kolibri ││ │ koha │ │kiwix │ │digistorm │ │ │ │
+│  │  │  │ /moodle/ │ │/kolibri│││/biblio│ │/wiki/│ │  :3000   │ │ │ │
+│  │  │  │  700M    │ │  500M  ││ │ 700M │ │ 256M │ │  256M    │ │ │ │
+│  │  │  └────┬─────┘ └────────┘│└──┬───┘ └──────┘ └────┬─────┘ │ │ │
+│  │  │       │                 │   │ SIP2:6001           │       │ │ │
+│  │  │  ┌────┴─────────────────┘   │                     │       │ │ │
+│  │  │  │  ┌──────────┐ ┌──────┐   │         ┌──────────┐│       │ │ │
+│  │  │  │  │  pmb     │ │slims │   │         │  redis   ││       │ │ │
+│  │  │  │  │  /pmb/   │ │/slims│   │         │  (Digi.) ││       │ │ │
+│  │  │  │  │  256M    │ │ 256M │   │         └──────────┘│       │ │ │
+│  │  │  └──┴──────────┘ └──┬───┘   │                     │       │ │ │
+│  │  │                     │       │                     │       │ │ │
+│  │  │  ┌──────────────────┴───────┘─────────────────────┘       │ │ │
+│  │  │  │  mariadb :3306  (BD partagée — Moodle, Koha, PMB, SLiMS│ │ │
+│  │  │  │  512M   memcached :11211 (sessions Koha, 48M)          │ │ │
+│  │  │  └─────────────────────────────────────────────────────────┘ │ │
+│  │  │                                                            │ │ │
+│  │  │  ┌──────────────────────────────────────────────────────┐ │ │ │
+│  │  │  │  portainer :9443  healthcheck-dashboard :8090        │ │ │ │
+│  │  │  └──────────────────────────────────────────────────────┘ │ │ │
+│  │  └────────────────────────────────────────────────────────────┘ │ │
+│  │                                                                 │ │
+│  │  ┌────────────── Données (bind mounts) /opt/edubox/data/ ─────┐ │ │
+│  │  │  data/mariadb/   data/moodle/{data,html}/   data/kolibri/  │ │ │
+│  │  │  data/koha/{data,config}/   data/pmb/   data/slims/        │ │ │
+│  │  │  data/digistorm/   data/portainer/                         │ │ │
+│  │  └────────────────────────────────────────────────────────────┘ │ │
+│  └─────────────────────────────────────────────────────────────────┘ │
+│                                                                      │
+│  USB: ┌───────────┐  ┌──────────────┐   (optionnels)                │
+│       │ Scanner   │  │ Lecteur RFID │                                │
+│       └───────────┘  └──────────────┘                                │
+└──────────────────────────────────────────────────────────────────────┘
 
-        ▼ WiFi "Ofelia" ▼
+          ▼ WiFi "Ofelia" ▼
 
    ┌──────────┐  ┌──────────┐  ┌──────────┐
-   │ Tablette │  │ Tablette │  │ Téléphone│  ... (10-20 clients)
+   │ Tablette │  │ Tablette │  │ Téléphone│   (10-20 clients simultanés)
    │ Android  │  │ iPad     │  │ Android  │
    └──────────┘  └──────────┘  └──────────┘
 
-   Navigateur → http://192.168.50.1 ou http://ofelia (DoH désactivé)
-   → Portail d'accueil avec choix : Moodle | Kolibri | Bibliothèque | Wikipedia ES
+   http://192.168.50.1  ou  http://ofelia  →  Portail d'accueil (FR/EN/ES/PT/IT/DE)
+   → Moodle | Kolibri | Koha | Kiwix | PMB | SLiMS | Digistorm
 ```
 
 ### 3.2 Allocation mémoire cible (4 Go)
@@ -143,16 +152,21 @@ L'objectif de l'UPS est de donner au système le temps d'effectuer un **shutdown
 | Service | RAM max allouée | Notes |
 |---|---|---|
 | Système (RPi OS Lite + hostapd + dnsmasq) | 300 Mo | Pas de GUI |
-| MariaDB (partagée Moodle + Koha) | 512 Mo | `innodb_buffer_pool_size=256M` |
+| MariaDB (partagée Moodle + Koha + PMB + SLiMS) | 512 Mo | `innodb_buffer_pool_size=256M` |
 | Moodle (PHP-FPM + Nginx) | 700 Mo | `memory_limit=128M` par worker, 4 workers max |
 | Kolibri (Python/Django + SQLite) | 500 Mo | Base de données SQLite propre, pas MariaDB |
-| Koha (Perl/Plack + Zebra/ES) | 700 Mo | Mode Zebra (pas Elasticsearch, trop lourd) |
+| Koha (Perl/Plack + Zebra) | 700 Mo | Mode Zebra (pas Elasticsearch, trop lourd) |
 | Kiwix (Wikipedia ES + Wikisource ES) | 256 Mo | ZIM 3.3 Go + 715 Mo chargés en streaming |
-| Nginx reverse proxy | 50 Mo | |
-| Portainer | 100 Mo | |
-| Healthcheck dashboard | 30 Mo | Container Alpine minimal |
-| ZeroTier | 20 Mo | Daemon léger (remplace Tailscale) |
-| **Headroom libre** | **~130 Mo** | Pour swap et pics |
+| PMB v8.1 (PHP/Apache) | 256 Mo | SIGB alternatif |
+| SLiMS v9.7.2 (PHP/Apache) | 256 Mo | SIGB open source |
+| Digistorm (Node.js/Vue3) | 256 Mo | Sondages / quiz collaboratifs |
+| Redis (cache Digistorm) | 64 Mo | `maxmemory 32mb` |
+| Memcached (sessions Koha) | 48 Mo | |
+| Nginx reverse proxy | 64 Mo | |
+| Portainer | 128 Mo | |
+| Healthcheck dashboard | 48 Mo | Container Alpine minimal |
+| ZeroTier | 20 Mo | Daemon léger |
+| **Total alloué** | **~4 Go** | Tight — swap 1 Go en filet de sécurité |
 
 Un swap de **1 Go** sur la SD sera configuré comme filet de sécurité (avec `vm.swappiness=10` pour limiter l'usure de la SD).
 
@@ -361,20 +375,22 @@ moodle:
   Modifier via : `UPDATE mdl_course SET fullname='Moodle' WHERE id=1;`
 - **Reset mot de passe** : `php admin/cli/reset_password.php --username=admin --password='...'`
 
-### 5.3 Cours pré-installés
+### 5.3 Cours pré-installés (FEAT-010)
 
-Après le premier déploiement, un script `edubox-moodle-setup.sh` :
+6 cours importés depuis la source `Rescate_Moodle_OFELIA` (fichiers `.mbz`) :
 
-1. Active les packs de langue **français**, **anglais**, **espagnol**, **portugais**, **italien**, **allemand**
-2. Importe des cours .mbz pré-packagés depuis `/opt/edubox/moodle-courses/` :
-   - **Alphabétisation numérique** (Digital Literacy basics)
-   - **Mathématiques fondamentales** (niveaux primaire/secondaire)
-   - **Sciences** (biologie, physique de base)
-   - **Langues** (français, anglais, espagnol — niveaux débutant)
-3. Configure les paramètres de performance pour Pi :
-   - `cachestore` → fichier (pas Redis, économie de RAM)
-   - `session_handler` → fichier
-   - `cron` via container dédié (toutes les 60s)
+| ID Moodle | Shortname | Titre |
+|---|---|---|
+| 5 | taller_cdigital | Taller de competencias digitales |
+| 6 | tgb | Taller gestión básica |
+| 7 | lk | Literacy Kolibri |
+| 8 | centro_de_recursos_académicos | Centro de recursos académicos |
+| 9 | mujer_emprende | Mujer emprende |
+| 10 | tec | TEC |
+
+Packs de langue installés dans `/var/www/moodledata/lang/` : `es`, `pt`, `it`, `de`, `fr`.
+
+Import via CLI : `php admin/cli/restore_backup.php --file=<fichier.mbz> --categoryid=1`
 
 ### 5.4 Optimisations Pi 5 / 4 Go
 
@@ -449,18 +465,14 @@ kolibri:
 
 ### 6.4 Channels de contenu pré-chargés
 
-Un script `edubox-kolibri-setup.sh` importe les channels suivants après le premier boot (nécessite internet une seule fois) :
-
-| Channel | ID | Langues | Taille approx. |
+| Channel | ID | Langues | Taille réelle |
 |---|---|---|---|
-| Khan Academy (sélection) | `1ceff53605e55bef987d88e0908658c5` | FR, EN, ES | ~15 Go (sélection) |
-| Wikipedia (articles sélectionnés) | `2e969a23e8af58d196662a24f5fe1b0c` | FR, EN, ES | ~5 Go |
-| African Storybook | `f9d3e0e46ea25789bbed672ff6a399ed` | FR, EN, Multi | ~500 Mo |
-| CK-12 Foundation | `63f7e82e20fa5b74a462901be4d4e2f0` | EN | ~2 Go |
-| Pratham Books (StoryWeaver) | `d15e83ba24b85b05a9a5a8e3e53f12f2` | Multi | ~1 Go |
-| Blockly Games (programmation) | `e625c30276c05be1bf70736e2c85d27f` | Multi | ~50 Mo |
+| **Khan Academy (Español)** | `c1f2b7e6ac9f56a2bb44fa7a48b66dce` | ES | ~58 Go |
 
-**Total estimé** : ~25 Go (largement dans les 512 Go)
+**Total réel sur le Pi** : 58 Go dans `/opt/edubox/data/kolibri/`
+
+Import réalisé via `scripts/edubox-kolibri-import.sh` (nécessite internet une seule fois).
+Commande : `docker exec edubox-kolibri kolibri manage importchannel network <ID>` puis `importcontent`.
 
 **Mécanisme de pré-chargement** :
 
@@ -834,7 +846,7 @@ server {
 - Moodle sub_filter doit utiliser `$host` (variable nginx dynamique) — ne jamais coder l'IP en dur (BUG-006)
 - Koha OPAC génère des liens absolus sans préfixe `/biblio/` (ex: `/cgi-bin/koha/opac-user.pl`) — utiliser une location regex `~ ^/cgi-bin/koha/opac` vers `koha_opac`, avant la règle préfixe `/cgi-bin/koha/` qui route vers le staff (BUG-007)
 - PMB et SLiMS : utiliser `resolver 127.0.0.11 valid=10s; set $var http://hostname; proxy_pass $var;` (sans chemin) — avec une variable, nginx ne strip pas le préfixe de l'URI, elle est transmise intacte à Apache
-- Bouton `← Portail` : injecté via `sub_filter '</body>' $back_btn` dans toutes les apps ; nécessite `proxy_set_header Accept-Encoding ""` pour désactiver gzip
+- **Bouton ⌂ Portail** : injecté via `sub_filter '</body>' $back_btn` dans toutes les apps (PMB, SLiMS, Digistorm) ; nécessite `proxy_set_header Accept-Encoding ""` pour désactiver gzip. Style : rond 38px, icône maison `&#127968;`, position `fixed top:12px left:50% transform:translateX(-50%)` — discret, haut-centre de page
 
 ### 8.2 docker-compose (extrait Nginx)
 
@@ -951,7 +963,7 @@ portainer:
 | Mesure | Détail |
 |---|---|
 | **Système de fichiers** | ext4 avec journaling activé (défaut) |
-| **Docker volumes** | Tous les volumes nommés, stockage sur la SD avec `fsync` |
+| **Persistance données** | **Bind mounts** vers `/opt/edubox/data/` (FEAT-011) — pas de volumes Docker nommés |
 | **MariaDB** | `innodb_flush_log_at_trx_commit=1` (flush à chaque transaction) |
 | **MariaDB** | `innodb_doublewrite=1` (protection corruption) |
 | **MariaDB** | `sync_binlog=1` |
@@ -961,30 +973,24 @@ portainer:
 | **Watchdog** | systemd watchdog hardware du Pi 5 activé (`RuntimeWatchdogSec=30`) |
 | **SD card** | Réduction des écritures : `noatime` dans fstab, tmpfs pour /tmp et /var/log |
 
-### 10.2 Script de sauvegarde périodique
+### 10.2 Scripts de sauvegarde et restauration (FEAT-011)
 
-```bash
-#!/bin/bash
-# /usr/local/bin/edubox-backup.sh
-# Exécuté toutes les 6 heures via systemd timer
+Trois scripts dans `/opt/edubox/scripts/` :
 
-BACKUP_DIR="/var/backups/edubox"
-DATE=$(date +%Y%m%d_%H%M)
+| Script | Usage | Fréquence |
+|---|---|---|
+| `edubox-backup.sh` | Dump SQL MariaDB + archive `data/` (hors Kolibri) | Toutes les 6h via systemd timer |
+| `backup.sh` | Idem + option `--with-kolibri` pour les 58 Go | Manuellement |
+| `restore.sh` | Restauration complète depuis un backup | À la demande |
 
-mkdir -p "$BACKUP_DIR"
+**Backup automatique** (`scripts/edubox-backup.sh`) :
+- `mariadb_DATE.sql.gz` — dump complet toutes BDD
+- `appdata_DATE.tar.gz` — archive de `/opt/edubox/data/` hors Kolibri
+- Rotation : 7 derniers backups conservés dans `/var/backups/edubox/`
 
-# Dump MariaDB
-docker exec edubox-mariadb mysqldump --all-databases --single-transaction \
-    -u root -p"${MARIADB_ROOT_PASS}" > "$BACKUP_DIR/mariadb_$DATE.sql"
+**Backup Kolibri** : à faire manuellement (`backup.sh --with-kolibri`) car ~58 Go — prévoir 30-60 min sur SD card.
 
-# Compress
-gzip "$BACKUP_DIR/mariadb_$DATE.sql"
-
-# Rotation : garder les 7 derniers backups
-ls -tp "$BACKUP_DIR"/mariadb_*.sql.gz | tail -n +8 | xargs -I {} rm -- {}
-
-echo "Backup completed: $DATE"
-```
+**Restauration** : `sudo bash restore.sh --date 20260401_1200 [--with-kolibri]`
 
 ### 10.3 Détection de shutdown d'urgence (avec UPS optionnel)
 
@@ -1035,10 +1041,30 @@ WantedBy=multi-user.target
 
 ### 11.1 Fichier `docker-compose.yml`
 
-```yaml
-version: "3.8"
+> Le fichier complet et à jour est `/opt/edubox/docker-compose.yml` (source de vérité).
+> Ce qui suit est un extrait des points architecturaux clés.
 
-services:
+**Volumes** : tous les services utilisent des **bind mounts** vers `/opt/edubox/data/` (FEAT-011).
+Plus de volumes Docker nommés — les données sont directement accessibles sur le Pi.
+
+| Service | Bind mount host → container |
+|---|---|
+| MariaDB | `/opt/edubox/data/mariadb` → `/var/lib/mysql` |
+| Moodle | `/opt/edubox/data/moodle/data` → `/var/www/moodledata` |
+| Moodle | `/opt/edubox/data/moodle/html` → `/var/www/html` |
+| Kolibri | `/opt/edubox/data/kolibri` → `/kolibri_data` |
+| Koha | `/opt/edubox/data/koha/data` → `/var/lib/koha` |
+| Koha | `/opt/edubox/data/koha/config` → `/etc/koha` |
+| PMB | `/opt/edubox/data/pmb/data` → `/var/www/html/pmb/temp` |
+| PMB | `/opt/edubox/data/pmb/config` → `/var/www/html/pmb/includes` |
+| SLiMS | `/opt/edubox/data/slims/data` → `/var/www/html/slims/files` |
+| SLiMS | `/opt/edubox/data/slims/config` → `/var/www/html/slims/config` |
+| Portainer | `/opt/edubox/data/portainer` → `/data` |
+
+**Services** : mariadb, redis, memcached, moodle, kolibri, koha, kiwix, pmb, slims, digistorm, nginx-proxy, healthcheck-dashboard, portainer
+
+```yaml
+# Extrait — services ajoutés depuis v1.8
 
   # === BASE DE DONNÉES PARTAGÉE ===
   mariadb:
@@ -1503,62 +1529,90 @@ log "  Portainer: https://localhost:9443 (create admin on first access)"
 ## 13. Structure des fichiers du projet
 
 ```
-/opt/edubox/
-├── docker-compose.yml
-├── .env                          # Mots de passe (non versionné)
-├── README.md
+/opt/edubox/                           ← repo git (versionné)
+├── docker-compose.yml                 # Stack complète (bind mounts)
+├── .env                               # Secrets (non versionné — .gitignore)
 │
 ├── nginx/
 │   ├── conf.d/
-│   │   └── edubox.conf           # Config reverse proxy
-│   └── proxy_params              # Headers proxy communs
+│   │   └── edubox.conf                # Reverse proxy + injection bouton ⌂
+│   └── proxy_params                   # Headers proxy communs
 │
 ├── portal/
-│   ├── index.html                # Page d'accueil responsive (FR/EN/ES/PT/IT/DE)
-│   ├── style.css                 # Styles inline-friendly
-│   ├── script.js                 # Status check + i18n
-│   └── assets/
-│       ├── moodle-icon.svg
-│       ├── kolibri-icon.svg
-│       ├── koha-icon.svg
-│       └── edubox-logo.svg
+│   └── index.html                     # Portail (FR/EN/ES/PT/IT/DE, offline)
+│
+├── moodle/
+│   └── 99-fix-wwwroot.sh              # Fix wwwroot dynamique (post-entrypoint)
 │
 ├── kolibri/
-│   └── Dockerfile                # Image Kolibri arm64
+│   └── Dockerfile                     # Image Kolibri arm64 (python:3.11-slim)
 │
 ├── koha/
-│   ├── Dockerfile                # Image Koha arm64
-│   ├── entrypoint.sh             # Init Koha instance
-│   ├── supervisord.conf          # Process manager interne
-│   ├── koha-sites.conf           # Config sites Koha
-│   └── SIPconfig.xml             # Config SIP2
+│   ├── Dockerfile                     # Image Koha arm64 (debian:bookworm-slim)
+│   ├── entrypoint.sh                  # Init instance + fix permissions Apache
+│   ├── supervisord.conf
+│   ├── koha-sites.conf
+│   └── SIPconfig.xml                  # Config SIP2 (portiques, scanners)
+│
+├── pmb/
+│   ├── Dockerfile                     # PMB v8.1 (php:8.2-apache)
+│   └── pmb_config_patched.php         # Config BD pré-patchée
+│
+├── slims/
+│   └── Dockerfile                     # SLiMS v9.7.2 (php:8.1-apache)
+│
+├── digistorm/
+│   └── Dockerfile                     # Digistorm (node:20-slim)
+│
+├── kiwix/
+│   └── data/                          # Fichiers ZIM (bind mount :ro)
+│       ├── wikipedia_es.zim           # ~3.3 Go
+│       └── wikisource_es.zim          # ~715 Mo
 │
 ├── healthcheck/
-│   ├── Dockerfile                # Dashboard status (Python/Flask)
-│   ├── app.py                    # API + mini dashboard
-│   └── templates/
-│       └── dashboard.html
+│   ├── Dockerfile
+│   └── app.py                         # Dashboard status + API /api/status
 │
 ├── mariadb/
 │   ├── init/
-│   │   └── 01-create-koha-db.sql # Création BD Koha
+│   │   └── 01-create-dbs.sql          # Création BDD koha, pmb, slims
 │   └── conf.d/
-│       └── edubox.cnf            # Tuning MariaDB pour Pi
+│       └── edubox.cnf                 # Tuning MariaDB pour Pi
 │
 ├── scripts/
-│   ├── edubox-install.sh         # Installateur principal
-│   ├── edubox-kolibri-import.sh  # Import channels Kolibri
-│   ├── edubox-moodle-setup.sh    # Import cours Moodle
-│   ├── edubox-koha-setup.sh      # Config initiale Koha
-│   ├── edubox-backup.sh          # Backup périodique
-│   ├── edubox-connectivity.sh    # Check internet
-│   ├── edubox-ups-monitor.sh     # Surveillance UPS (optionnel)
-│   └── edubox-barcode-bridge.py  # Pont scanner USB → SIP2/API
+│   ├── install.sh                     # Installation complète Pi neuf
+│   ├── backup.sh                      # Backup manuel (+ option --with-kolibri)
+│   ├── restore.sh                     # Restauration depuis backup
+│   ├── edubox-backup.sh               # Backup auto toutes les 6h (systemd timer)
+│   └── edubox-kolibri-import.sh       # Import channels Kolibri
 │
-└── moodle-courses/               # Fichiers .mbz pré-packagés
-    ├── digital-literacy-fr.mbz
-    ├── basic-math-fr.mbz
-    └── english-beginners-fr.mbz
+├── docs/
+│   ├── specs/
+│   │   ├── specs_keebee.md            # ← Ce fichier (source de vérité)
+│   │   ├── FEAT-XXX-*.md              # Specs features
+│   │   └── ...
+│   ├── bugs/
+│   │   └── BUG-XXX-*.md
+│   └── tasks/
+│       └── TASKS.md
+│
+└── data/                              ← NON versionné (.gitignore)
+    ├── mariadb/                       # BDD MariaDB (uid 999)
+    ├── moodle/
+    │   ├── data/                      # Fichiers Moodle (uid 82)
+    │   └── html/                      # Code PHP Moodle (uid 82)
+    ├── kolibri/                       # Channels Kolibri (~58 Go)
+    ├── koha/
+    │   ├── data/                      # Données Koha
+    │   └── config/                    # Config Koha (koha-conf.xml)
+    ├── pmb/
+    │   ├── data/                      # Uploads PMB (uid 33)
+    │   └── config/                    # Config PMB (uid 33)
+    ├── slims/
+    │   ├── data/                      # Fichiers SLiMS (uid 33)
+    │   └── config/                    # Config SLiMS (uid 33)
+    ├── digistorm/                     # Fichiers uploadés Digistorm
+    └── portainer/                     # Données Portainer
 ```
 
 ---

@@ -2,6 +2,20 @@
 
 ## In Progress
 
+### FEAT-011 — Bind mounts + scripts install/backup/restore — EN COURS 2026-04-01
+- [x] Vérifier noms des volumes Docker (préfixe `edubox_`)
+- [x] Créer répertoires `/opt/edubox/data/` avec bons UIDs (999/82/33)
+- [x] Mettre à jour `docker-compose.yml` (volumes nommés → bind mounts)
+- [x] Migrer données : MariaDB, Moodle, Koha, Digistorm, PMB, SLiMS, Portainer
+- [ ] Migrer Kolibri (58 Go — copie en cours en background sur le Pi)
+- [x] Créer `scripts/install.sh` (installation Pi neuf)
+- [x] Créer `scripts/backup.sh` (backup complet BDD + appdata)
+- [x] Créer `scripts/restore.sh` (restauration depuis backup)
+- [x] Mettre à jour `scripts/edubox-backup.sh` (ajoute archive appdata)
+- [ ] Tester et confirmer stack fonctionnel
+- [ ] Supprimer anciens volumes Docker nommés (après 48h de stabilité)
+- [ ] Committer
+
 ### FEAT-010 — Import cours Moodle depuis Rescate_Moodle_OFELIA — DONE 2026-03-31
 - [x] Copie 6 fichiers .mbz sur le Pi (/tmp/)
 - [x] docker cp vers container edubox-moodle
